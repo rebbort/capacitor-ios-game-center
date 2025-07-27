@@ -5,11 +5,7 @@ import type {
   UserProfile,
 } from './definitions';
 
-export enum PhotoSize {
-  SMALL = 'SMALL',
-  MEDIUM = 'MEDIUM',
-  LARGE = 'LARGE',
-}
+export type PhotoSize = 'small' | 'normal' | 'large';
 
 export interface GameCenterPlugin {
   authenticateSilent(): Promise<AuthState>;

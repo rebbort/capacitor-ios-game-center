@@ -17,6 +17,13 @@ try {
 }
 ```
 
+```ts
+import { getProfile } from '@yourorg/capacitor-gc';
+
+const profile = await getProfile('normal');
+console.log(profile.displayName, profile.avatarUrl);
+```
+
 ## Local build
 
 Run the example project sync command before building the iOS plugin:
