@@ -44,3 +44,15 @@ npm run test:native
 ```
 
 On Linux hosts this command safely exits with a skip message.
+
+## Try it
+
+A small web demo is located in the `demo/` directory.
+
+```bash
+cd demo
+npm install
+npm run dev
+```
+
+This starts a Vite dev server with hot reload so you can test Game Center authentication in the browser.
