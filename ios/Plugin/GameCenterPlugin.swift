@@ -12,9 +12,17 @@ import GameKit
 protocol LocalPlayerProtocol {
     var isAuthenticated: Bool { get }
     var authenticateHandler: ((UIViewController?, Error?) -> Void)? { get set }
+    var teamPlayerID: String { get }
+    @available(iOS 14.0, *)
+    func fetchIdentityVerificationItems() async throws -> (URL, Data, Data, UInt64)
 }
 
-extension GKLocalPlayer: LocalPlayerProtocol {}
+extension GKLocalPlayer: LocalPlayerProtocol {
+    @available(iOS 14.0, *)
+    func fetchIdentityVerificationItems() async throws -> (URL, Data, Data, UInt64) {
+        try await fetchItems(forIdentityVerificationSignature: ())
+    }
+}
 
 @objc(GameCenterPlugin)
 public class GameCenterPlugin: CAPPlugin {
@@ -97,6 +105,56 @@ public class GameCenterPlugin: CAPPlugin {
                     self.notifyListeners("authStateChanged", data: ["authenticated": false])
                 }
             }
+        }
+    }
+
+    @objc public func getVerificationData(_ call: CAPPluginCall) async {
+        guard #available(iOS 14.0, *) else {
+            call.reject("iOS version unsupported", PluginError.osUnsupported.rawValue)
+            return
+        }
+
+        guard localPlayer.isAuthenticated else {
+            call.reject("Not authenticated", PluginError.notAuthenticated.rawValue)
+            return
+        }
+
+        do {
+            let (url, signature, salt, timestamp) = try await localPlayer.fetchIdentityVerificationItems()
+            guard let host = url.host,
+                  host == "static.gc.apple.com" || host == "sandbox.gc.apple.com" else {
+                call.reject("Internal error", PluginError.internalError.rawValue)
+                return
+            }
+
+            struct VerificationPayload: Codable {
+                let playerId: String
+                let bundleId: String
+                let publicKeyUrl: String
+                let timestamp: UInt64
+                let signature: String
+                let salt: String
+            }
+
+            let payload = VerificationPayload(
+                playerId: localPlayer.teamPlayerID,
+                bundleId: Bundle.main.bundleIdentifier ?? "",
+                publicKeyUrl: url.absoluteString,
+                timestamp: timestamp,
+                signature: signature.base64EncodedString(),
+                salt: salt.base64EncodedString()
+            )
+
+            let encoder = JSONEncoder()
+            guard let data = try? encoder.encode(payload),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                call.reject("Internal error", PluginError.internalError.rawValue)
+                return
+            }
+
+            call.resolve(json)
+        } catch {
+            call.reject("Internal error", PluginError.internalError.rawValue)
         }
     }
 }
