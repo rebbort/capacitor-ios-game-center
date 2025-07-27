@@ -28,7 +28,7 @@ export function isAuthState(data: unknown): data is AuthState {
   return (
     !!data &&
     typeof data === 'object' &&
-    typeof (data as any).authenticated === 'boolean'
+    typeof (data as Record<string, unknown>).authenticated === 'boolean'
   );
 }
 
@@ -38,7 +38,7 @@ export function isVerificationPayload(
   if (!data || typeof data !== 'object') {
     return false;
   }
-  const obj = data as any;
+  const obj = data as Record<string, unknown>;
   return (
     typeof obj.playerId === 'string' &&
     typeof obj.publicKeyUrl === 'string' &&
@@ -53,7 +53,7 @@ export function isUserProfile(data: unknown): data is UserProfile {
   if (!data || typeof data !== 'object') {
     return false;
   }
-  const obj = data as any;
+  const obj = data as Record<string, unknown>;
   return (
     typeof obj.displayName === 'string' &&
     typeof obj.playerId === 'string' &&

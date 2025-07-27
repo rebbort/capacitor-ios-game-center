@@ -4,17 +4,18 @@ const demoUrl = 'http://localhost:5173';
 
 test.describe('Demo app', () => {
   test('Game Center ON', async ({ page }) => {
+    page.on('console', m => console.log('PAGE:', m.text()));
     await page.addInitScript(() => {
-      const plugin = {
+      (window as any).__gcPlugin = {
         authenticateSilent: async () => ({ authenticated: true }),
         getProfile: async () => ({
           displayName: 'Player',
           playerId: '1',
-          avatarUrl: 'data:image/png;base64,' + 'a'.repeat(150),
+          avatarUrl:
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/UZdBngAAAAASUVORK5CYII=',
         }),
         addListener: () => ({ remove: () => {} }),
-      } as any;
-      window.Capacitor = { registerPlugin: () => plugin } as any;
+      };
     });
     await page.goto(demoUrl);
     await expect(page.locator('#name')).toHaveText('Player');
@@ -23,14 +24,14 @@ test.describe('Demo app', () => {
   });
 
   test('Game Center OFF', async ({ page }) => {
+    page.on('console', m => console.log('PAGE:', m.text()));
     await page.addInitScript(() => {
-      const plugin = {
+      (window as any).__gcPlugin = {
         authenticateSilent: async () => {
           throw { code: 'NOT_AUTHENTICATED' };
         },
         addListener: () => ({ remove: () => {} }),
-      } as any;
-      window.Capacitor = { registerPlugin: () => plugin } as any;
+      };
     });
     await page.goto(demoUrl);
     await expect(page.locator('#name')).toHaveText('Guest');

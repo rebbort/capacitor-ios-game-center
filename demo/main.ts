@@ -3,7 +3,14 @@ import {
   getProfile,
   GameCenter,
   PluginError,
+  type GameCenterPlugin,
 } from '../src';
+
+const gcOverride = (window as any).__gcPlugin as Partial<GameCenterPlugin> | undefined;
+console.log('gcOverride', gcOverride);
+const auth = gcOverride?.authenticateSilent ?? authenticateSilent;
+const profile = gcOverride?.getProfile ?? getProfile;
+const addListener = gcOverride?.addListener ?? GameCenter.addListener;
 
 const avatar = document.getElementById('avatar') as HTMLImageElement;
 const nameEl = document.getElementById('name') as HTMLElement;
@@ -18,14 +25,14 @@ async function showGuest() {
 
 async function loadProfile() {
   try {
-    const state = await authenticateSilent();
+    const state = await auth();
     if (!state.authenticated) {
       throw { code: PluginError.NOT_AUTHENTICATED };
     }
-    const profile = await getProfile('small');
-    avatar.src = profile.avatarUrl;
+    const p = await profile('small');
+    avatar.src = p.avatarUrl;
     await avatar.decode();
-    nameEl.textContent = profile.displayName;
+    nameEl.textContent = p.displayName;
     statusEl.textContent = '';
   } catch (e: unknown) {
     const err = e as { code?: string; message?: string };
@@ -41,7 +48,7 @@ async function loadProfile() {
   }
 }
 
-GameCenter.addListener('authStateChanged', (ev: { authenticated: boolean }) => {
+addListener('authStateChanged', (ev: { authenticated: boolean }) => {
   if (ev.authenticated) {
     loadProfile();
   } else {
