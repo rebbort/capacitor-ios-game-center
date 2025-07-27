@@ -7,7 +7,9 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts && prettier . --check",
     "sync:ios": "cd example && npm ci && npx cap sync ios",
-    "test:native": "node ./scripts/skip-if-not-macos.js"
+    "test:native": "node ./scripts/skip-if-not-macos.js",
+    "demo:dev": "vite --config demo/vite.config.ts",
+    "demo:build": "vite build --config demo/vite.config.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +23,8 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "prettier": "^3.6.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vite": "^7.0.6"
   },
   "module": "dist/index.js",
   "types": "dist/index.d.ts"
