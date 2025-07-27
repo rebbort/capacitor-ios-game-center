@@ -1,0 +1,38 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm install
+      - name: Build
+        run: npm run build
+      - name: Lint
+        run: npm run lint
+      - name: Capacitor sync
+        run: npm run sync:ios
+
+  ios-tests:
+    runs-on: macos-14
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+      - run: npm ci
+      - run: |
+          xcodebuild \
+            -project ios/Plugin/Plugin.xcodeproj \
+            -scheme GameCenterPluginTests \
+            -destination 'platform=iOS Simulator,name=iPhone 14,OS=17.4' \
+            clean test
