@@ -189,13 +189,10 @@ public class GameCenterPlugin: CAPPlugin {
         let displayName = GKLocalPlayer.local.displayName
         var avatarUrl = ""
 
-        if let image = try? await GKLocalPlayer.local.loadPhoto(for: size),
-           let data = image.pngData() {
-            let path = NSTemporaryDirectory().appending("gc_avatar_\(playerId)_\(sizeString).png")
-            try? FileManager.default.removeItem(atPath: path)
-            FileManager.default.createFile(atPath: path, contents: data)
-            if let uri = bridge?.filesystem?.getUri(forPath: path) {
-                avatarUrl = uri
+        if let image = try? await localPlayer.loadPhoto(for: size) {
+            if let data = image.pngData() {
+                let b64 = data.base64EncodedString()
+                avatarUrl = "data:image/png;base64,\(b64)"
             }
         }
 
