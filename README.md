@@ -1,69 +1,79 @@
 # Capacitor iOS Game Center Plugin
+
+[![npm](https://img.shields.io/npm/v/@yourorg/capacitor-gc)](https://www.npmjs.com/package/@yourorg/capacitor-gc)
 [![CI](https://github.com/yourorg/capacitor-ios-game-center/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yourorg/capacitor-ios-game-center/actions/workflows/ci.yml)
+[![License](https://img.shields.io/npm/l/@yourorg/capacitor-gc)](LICENSE)
 
-This package provides a minimal interface to authenticate with Game Center on iOS devices.
+Minimal Game Center authentication for Capacitor apps.
 
-## Usage
+## 1. Introduction
+This plugin performs silent Game Center login on iOS devices and returns a verification payload for your backend.
+
+## 2. Requirements
+- iOS 14 or later
+- Capacitor 6
+
+## 3. Install
+```bash
+npm i @yourorg/capacitor-gc
+npx cap sync
+```
+
+## 4. Quick start
+Paste the following code into your Ionic/Phaser project. It compiles without TypeScript errors.
 
 ```ts
-import { authenticateSilent, PluginError } from '@yourorg/capacitor-gc';
+import { authenticateSilent, getVerificationData, getProfile, PluginError } from '@yourorg/capacitor-gc';
 
-try {
-  const state = await authenticateSilent();
-  console.log('Authenticated:', state.authenticated);
-} catch (e) {
-  if ((e as { code?: PluginError }).code === PluginError.NOT_AUTHENTICATED) {
-    console.log('User not authenticated');
+async function initGC() {
+  try {
+    const state = await authenticateSilent();
+    if (!state.authenticated) return;
+
+    const verify = await getVerificationData();
+    await fetch('/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(verify),
+    });
+
+    const profile = await getProfile('small');
+    console.log(profile.displayName);
+  } catch (e) {
+    if ((e as { code?: PluginError }).code === PluginError.GC_UNAVAILABLE) {
+      console.log('Game Center unavailable');
+    }
   }
 }
 ```
 
-```ts
-import { getProfile } from '@yourorg/capacitor-gc';
-
-const profile = await getProfile('normal');
-console.log(profile.displayName, profile.avatarUrl);
-```
-
-```tsx
-<img src={profile.avatarUrl} alt="avatar" />
-```
-
-## Local build
-
-Run the example project sync command before building the iOS plugin:
+## 5. Backend verification
+Send the payload returned by `getVerificationData()` to your server. Example using curl:
 
 ```bash
-npm run sync:ios
+curl -X POST https://your.app/verify \
+  -H 'Content-Type: application/json' \
+  -d '{"playerId":"...","signature":"..."}'
 ```
 
-iOS native tests run automatically in CI on a macOS runner. Locally you can run
-them only on macOS using:
+## 6. Guest fallback
+When authentication fails you may continue in guest mode and hide any Game Center features.
 
+![Profile](docs/profile_success.png)
+![Guest](docs/guest_mode.png)
+
+## 7. API reference
+TypeScript definitions are located in [src/definitions.ts](src/definitions.ts).
+
+## 8. Building & Testing
 ```bash
-npm run test:native
+npm run sync:ios    # prepare example project
+npm run build       # build plugin
+npm run test:native # iOS XCTest (macOS only)
+npm run test:web    # Jest
+npm run test:e2e    # Playwright
 ```
 
-On Linux hosts this command safely exits with a skip message.
+## 9. License
+MIT
 
-## Testing
-
-Run the test suites with:
-
-```bash
-npm run test:native   # iOS XCTest
-npm run test:web      # Jest unit tests
-npm run test:e2e      # Playwright end-to-end
-```
-
-## Try it
-
-A small web demo is located in the `demo/` directory.
-
-```bash
-cd demo
-npm install
-npm run dev
-```
-
-This starts a Vite dev server with hot reload so you can test Game Center authentication in the browser.
