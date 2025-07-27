@@ -1,0 +1,13 @@
+{
+  "name": "gc-demo",
+  "version": "0.0.1",
+  "dependencies": {
+    "@capacitor/cli": "^7.4.2",
+    "@capacitor/core": "^7.4.2",
+    "@capacitor/ios": "^7.4.2",
+    "capacitor-ios-game-center": "file:.."
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

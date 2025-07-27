@@ -5,7 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "lint": "eslint . --ext .ts && prettier . --check"
+    "lint": "eslint . --ext .ts && prettier . --check",
+    "sync:ios": "cd example && npm ci && npx cap sync ios",
+    "test:native": "node ./scripts/skip-if-not-macos.js"
   },
   "keywords": [],
   "author": "",

@@ -16,3 +16,20 @@ try {
   }
 }
 ```
+
+## Local build
+
+Run the example project sync command before building the iOS plugin:
+
+```bash
+npm run sync:ios
+```
+
+iOS native tests run automatically in CI on a macOS runner. Locally you can run
+them only on macOS using:
+
+```bash
+npm run test:native
+```
+
+On Linux hosts this command safely exits with a skip message.
