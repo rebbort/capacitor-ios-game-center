@@ -145,7 +145,7 @@ class GameCenterPluginTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
-    func testGetProfileSuccessCreatesFile() async {
+    func testGetProfileSuccessReturnsDataUrl() async {
         let plugin = GameCenterPlugin()
         let player = MockLocalPlayer()
         plugin.localPlayer = player
@@ -155,26 +155,39 @@ class GameCenterPluginTests: XCTestCase {
             return UIImage(named: "TestAvatar")
         }
 
-        class MockFS: CAPFileSystemProtocol {
-            func getUri(forPath path: String) -> String {
-                return "capacitor://localhost/_capacitor_file_" + path
-            }
-        }
-        class MockBridge: CAPBridgeProtocol {
-            var filesystem: CAPFileSystemProtocol? = MockFS()
-        }
-
-        plugin.bridge = MockBridge()
-
+        let expectedLength = UIImage(named: "TestAvatar")!.pngData()!.base64EncodedString().count
         let expectation = self.expectation(description: "resolved")
         let call = CAPPluginCall(callbackId: "6", methodName: "getProfile", options: ["size": "small"], success: { result, _ in
             if let dict = result?.data as? [String: String],
                let url = dict["avatarUrl"],
-               url.hasPrefix("capacitor://localhost/_capacitor_file_") {
-                let path = NSTemporaryDirectory().appending("gc_avatar_player555_small.png")
-                if FileManager.default.fileExists(atPath: path) {
+               url.hasPrefix("data:image/png;base64,") {
+                let b64 = url.replacingOccurrences(of: "data:image/png;base64,", with: "")
+                if b64.count == expectedLength {
                     expectation.fulfill()
                 }
+            }
+        }, error: { _ in })
+
+        await plugin.getProfile(call)
+        waitForExpectations(timeout: 1)
+    }
+
+    func testGetProfileNoAvatar() async {
+        let plugin = GameCenterPlugin()
+        let player = MockLocalPlayer()
+        plugin.localPlayer = player
+        player.isAuthenticated = true
+        player.teamPlayerID = "player777"
+        player.photoHandler = { _ in
+            return nil
+        }
+
+        let expectation = self.expectation(description: "resolved")
+        let call = CAPPluginCall(callbackId: "7", methodName: "getProfile", options: [:], success: { result, _ in
+            if let dict = result?.data as? [String: String],
+               let url = dict["avatarUrl"],
+               url.isEmpty {
+                expectation.fulfill()
             }
         }, error: { _ in })
 

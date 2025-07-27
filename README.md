@@ -24,6 +24,10 @@ const profile = await getProfile('normal');
 console.log(profile.displayName, profile.avatarUrl);
 ```
 
+```tsx
+<img src={profile.avatarUrl} alt="avatar" />
+```
+
 ## Local build
 
 Run the example project sync command before building the iOS plugin:
