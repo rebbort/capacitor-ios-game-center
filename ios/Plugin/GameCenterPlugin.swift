@@ -15,6 +15,8 @@ protocol LocalPlayerProtocol {
     var teamPlayerID: String { get }
     @available(iOS 14.0, *)
     func fetchIdentityVerificationItems() async throws -> (URL, Data, Data, UInt64)
+    @available(iOS 14.0, *)
+    func loadPhoto(for size: GKPlayer.PhotoSize) async throws -> UIImage?
 }
 
 extension GKLocalPlayer: LocalPlayerProtocol {
@@ -156,5 +158,47 @@ public class GameCenterPlugin: CAPPlugin {
         } catch {
             call.reject("Internal error", PluginError.internalError.rawValue)
         }
+    }
+
+    private func photoSize(from string: String) -> GKPlayer.PhotoSize {
+        switch string.lowercased() {
+        case "large":
+            return .large
+        case "normal":
+            return .normal
+        default:
+            return .small
+        }
+    }
+
+    @objc public func getProfile(_ call: CAPPluginCall) async {
+        guard #available(iOS 14.0, *) else {
+            call.reject("iOS version unsupported", PluginError.osUnsupported.rawValue)
+            return
+        }
+
+        guard localPlayer.isAuthenticated else {
+            call.reject("Not authenticated", PluginError.notAuthenticated.rawValue)
+            return
+        }
+
+        let sizeString = call.getString("size") ?? "small"
+        let size = photoSize(from: sizeString)
+
+        let playerId = localPlayer.teamPlayerID
+        let displayName = GKLocalPlayer.local.displayName
+        var avatarUrl = ""
+
+        if let image = try? await GKLocalPlayer.local.loadPhoto(for: size),
+           let data = image.pngData() {
+            let path = NSTemporaryDirectory().appending("gc_avatar_\(playerId)_\(sizeString).png")
+            try? FileManager.default.removeItem(atPath: path)
+            FileManager.default.createFile(atPath: path, contents: data)
+            if let uri = bridge?.filesystem?.getUri(forPath: path) {
+                avatarUrl = uri
+            }
+        }
+
+        call.resolve(["playerId": playerId, "displayName": displayName, "avatarUrl": avatarUrl])
     }
 }

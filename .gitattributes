@@ -1,1 +1,2 @@
 *.png filter=lfs diff=lfs merge=lfs -text
+ios/PluginTests/Resources/TestAvatar.png filter=lfs diff=lfs merge=lfs -text

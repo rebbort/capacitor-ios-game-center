@@ -10,7 +10,7 @@ export interface VerificationPayload {
 export interface UserProfile {
   displayName: string;
   playerId: string;
-  photo?: string;
+  avatarUrl: string;
 }
 
 export interface AuthState {
