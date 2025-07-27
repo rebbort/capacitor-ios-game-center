@@ -45,6 +45,16 @@ npm run test:native
 
 On Linux hosts this command safely exits with a skip message.
 
+## Testing
+
+Run the test suites with:
+
+```bash
+npm run test:native   # iOS XCTest
+npm run test:web      # Jest unit tests
+npm run test:e2e      # Playwright end-to-end
+```
+
 ## Try it
 
 A small web demo is located in the `demo/` directory.

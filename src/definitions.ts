@@ -23,3 +23,40 @@ export enum PluginError {
   OS_UNSUPPORTED = 'OS_UNSUPPORTED',
   INTERNAL = 'INTERNAL',
 }
+
+export function isAuthState(data: unknown): data is AuthState {
+  return (
+    !!data &&
+    typeof data === 'object' &&
+    typeof (data as any).authenticated === 'boolean'
+  );
+}
+
+export function isVerificationPayload(
+  data: unknown,
+): data is VerificationPayload {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+  const obj = data as any;
+  return (
+    typeof obj.playerId === 'string' &&
+    typeof obj.publicKeyUrl === 'string' &&
+    typeof obj.signature === 'string' &&
+    typeof obj.salt === 'string' &&
+    typeof obj.timestamp === 'number' &&
+    typeof obj.bundleId === 'string'
+  );
+}
+
+export function isUserProfile(data: unknown): data is UserProfile {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+  const obj = data as any;
+  return (
+    typeof obj.displayName === 'string' &&
+    typeof obj.playerId === 'string' &&
+    typeof obj.avatarUrl === 'string'
+  );
+}
