@@ -8,6 +8,8 @@
     "lint": "eslint . --ext .ts && prettier . --check",
     "sync:ios": "cd example && npm ci && npx cap sync ios",
     "test:native": "node ./scripts/skip-if-not-macos.js",
+    "test:web": "jest",
+    "test:e2e": "playwright test",
     "demo:dev": "vite --config demo/vite.config.ts",
     "demo:build": "vite build --config demo/vite.config.ts"
   },
@@ -17,12 +19,17 @@
   "type": "module",
   "devDependencies": {
     "@capacitor/core": "^7.4.2",
+    "@playwright/test": "^1.43.0",
+    "@types/jest": "^29.5.11",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.0.5",
     "prettier": "^3.6.2",
+    "ts-jest": "^29.1.1",
     "typescript": "^5.8.3",
     "vite": "^7.0.6"
   },
