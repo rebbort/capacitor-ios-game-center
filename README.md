@@ -1,4 +1,5 @@
 # Capacitor iOS Game Center Plugin
+[![CI](https://github.com/yourorg/capacitor-ios-game-center/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yourorg/capacitor-ios-game-center/actions/workflows/ci.yml)
 
 This package provides a minimal interface to authenticate with Game Center on iOS devices.
 

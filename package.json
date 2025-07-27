@@ -4,11 +4,11 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "lint": "eslint . --ext .ts && prettier . --check",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
     "sync:ios": "cd example && npm ci && npx cap sync ios",
     "test:native": "node ./scripts/skip-if-not-macos.js",
-    "test:web": "jest",
+    "test:web": "jest --coverage",
     "test:e2e": "playwright test",
     "demo:dev": "vite --config demo/vite.config.ts",
     "demo:build": "vite build --config demo/vite.config.ts"
