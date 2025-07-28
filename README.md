@@ -10,7 +10,7 @@ Minimal Game Center authentication for Capacitor apps.
 This plugin performs silent Game Center login on iOS devices and returns a verification payload for your backend.
 
 ## 2. Requirements
-- iOS 14 or later
+- iOS 13 or later
 - Capacitor 6
 
 ## 3. Install
