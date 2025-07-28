@@ -8,14 +8,22 @@ class MockLocalPlayer: LocalPlayerProtocol {
     var authenticateHandler: ((UIViewController?, Error?) -> Void)?
     var teamPlayerID: String = "testPlayer"
     var fetchHandler: (() async throws -> (URL, Data, Data, UInt64))?
+    var legacyHandler: ((@escaping (URL?, Data?, Data?, UInt64, Error?) -> Void) -> Void)?
     var photoHandler: ((GKPlayer.PhotoSize) async throws -> UIImage?)?
 
-    @available(iOS 14.0, *)
     func fetchIdentityVerificationItems() async throws -> (URL, Data, Data, UInt64) {
         if let handler = fetchHandler {
             return try await handler()
         }
         return (URL(string: "https://static.gc.apple.com")!, Data(), Data(), 0)
+    }
+
+    func generateIdentityVerificationSignature(_ completionHandler: @escaping (URL?, Data?, Data?, UInt64, Error?) -> Void) {
+        if let handler = legacyHandler {
+            handler(completionHandler)
+        } else {
+            completionHandler(URL(string: "https://static.gc.apple.com"), Data(), Data(), 0, nil)
+        }
     }
 
     @available(iOS 14.0, *)
@@ -123,6 +131,28 @@ class GameCenterPluginTests: XCTestCase {
                 expectation.fulfill()
             }
         })
+
+        Task { await plugin.getVerificationData(call) }
+        waitForExpectations(timeout: 1)
+    }
+
+    func testLegacySignatureAPI() {
+        let plugin = GameCenterPlugin()
+        let player = MockLocalPlayer()
+        plugin.localPlayer = player
+        plugin.osOverride = OperatingSystemVersion(majorVersion: 13, minorVersion: 5, patchVersion: 0)
+        player.isAuthenticated = true
+        player.teamPlayerID = "legacy"
+        player.legacyHandler = { completion in
+            completion(URL(string: "https://static.gc.apple.com")!, Data([9]), Data([8]), 42, nil)
+        }
+
+        let expectation = self.expectation(description: "resolved")
+        let call = CAPPluginCall(callbackId: "legacy", methodName: "getVerificationData", options: [:], success: { result, _ in
+            if let dict = result?.data as? [String: Any], dict["playerId"] as? String == "legacy" {
+                expectation.fulfill()
+            }
+        }, error: { _ in })
 
         Task { await plugin.getVerificationData(call) }
         waitForExpectations(timeout: 1)

@@ -13,23 +13,49 @@ protocol LocalPlayerProtocol {
     var isAuthenticated: Bool { get }
     var authenticateHandler: ((UIViewController?, Error?) -> Void)? { get set }
     var teamPlayerID: String { get }
-    @available(iOS 14.0, *)
     func fetchIdentityVerificationItems() async throws -> (URL, Data, Data, UInt64)
+    func generateIdentityVerificationSignature(
+        _ completionHandler: @escaping (URL?, Data?, Data?, UInt64, Error?) -> Void
+    )
     @available(iOS 14.0, *)
     func loadPhoto(for size: GKPlayer.PhotoSize) async throws -> UIImage?
 }
 
 extension GKLocalPlayer: LocalPlayerProtocol {
-    @available(iOS 14.0, *)
     func fetchIdentityVerificationItems() async throws -> (URL, Data, Data, UInt64) {
-        try await fetchItems(forIdentityVerificationSignature: ())
+        if #available(iOS 14.0, *) {
+            return try await fetchItems(forIdentityVerificationSignature: ())
+        } else {
+            return try await withCheckedThrowingContinuation { cont in
+                generateIdentityVerificationSignature { url, sig, salt, ts, err in
+                    if let url, let sig, let salt {
+                        cont.resume(returning: (url, sig, salt, ts))
+                    } else if let err {
+                        cont.resume(throwing: err)
+                    } else {
+                        cont.resume(throwing: GKError(.unknown))
+                    }
+                }
+            }
+        }
+    }
+
+    func generateIdentityVerificationSignature(
+        _ completionHandler: @escaping (URL?, Data?, Data?, UInt64, Error?) -> Void
+    ) {
+        generateIdentityVerificationSignature(completionHandler: completionHandler)
     }
 }
 
 @objc(GameCenterPlugin)
 public class GameCenterPlugin: CAPPlugin {
     internal var localPlayer: LocalPlayerProtocol = GKLocalPlayer.local
+    internal var osOverride: OperatingSystemVersion?
     private let cacheKey = "gc_auth_state"
+
+    private var currentOS: OperatingSystemVersion {
+        osOverride ?? ProcessInfo.processInfo.operatingSystemVersion
+    }
 
     private func cacheAuthState(_ state: Bool) {
         let data = Data([state ? 1 : 0])
@@ -60,7 +86,8 @@ public class GameCenterPlugin: CAPPlugin {
     }
 
     @objc public func authenticateSilent(_ call: CAPPluginCall) {
-        guard #available(iOS 14.0, *) else {
+        let os = currentOS
+        if os.majorVersion < 13 {
             call.reject("iOS version unsupported", PluginError.osUnsupported.rawValue)
             notifyListeners("authStateChanged", data: ["authenticated": false])
             return
@@ -111,7 +138,8 @@ public class GameCenterPlugin: CAPPlugin {
     }
 
     @objc public func getVerificationData(_ call: CAPPluginCall) async {
-        guard #available(iOS 14.0, *) else {
+        let os = currentOS
+        if os.majorVersion < 13 {
             call.reject("iOS version unsupported", PluginError.osUnsupported.rawValue)
             return
         }
@@ -122,7 +150,23 @@ public class GameCenterPlugin: CAPPlugin {
         }
 
         do {
-            let (url, signature, salt, timestamp) = try await localPlayer.fetchIdentityVerificationItems()
+            let items: (URL, Data, Data, UInt64)
+            if os.majorVersion >= 14 {
+                items = try await localPlayer.fetchIdentityVerificationItems()
+            } else {
+                items = try await withCheckedThrowingContinuation { cont in
+                    localPlayer.generateIdentityVerificationSignature { url, sig, salt, ts, err in
+                        if let url, let sig, let salt {
+                            cont.resume(returning: (url, sig, salt, ts))
+                        } else if let err {
+                            cont.resume(throwing: err)
+                        } else {
+                            cont.resume(throwing: GKError(.unknown))
+                        }
+                    }
+                }
+            }
+            let (url, signature, salt, timestamp) = items
             guard let host = url.host,
                   host == "static.gc.apple.com" || host == "sandbox.gc.apple.com" else {
                 call.reject("Internal error", PluginError.internalError.rawValue)

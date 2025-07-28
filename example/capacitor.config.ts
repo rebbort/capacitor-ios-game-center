@@ -5,6 +5,7 @@ const config: CapacitorConfig = {
   appName: 'gc-demo',
   webDir: 'www',
   bundledWebRuntime: false,
+  ios: { minVersion: '13.0' },
 };
 
 export default config;
